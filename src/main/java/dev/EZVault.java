@@ -18,7 +18,7 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.sun.net.httpserver.HttpServer; // prosta wbudowana HTTP obsługa
+import com.sun.net.httpserver.HttpServer;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.subjects.PublishSubject;
 import org.bstats.bukkit.Metrics;
@@ -28,34 +28,25 @@ public final class EZVault {
     private static JavaPlugin plugin;
     private static Logger logger;
 
-    // Multi economy
     private static final Map<String, EconomyWrapper> economyProviders = new ConcurrentHashMap<>();
     private static volatile String activeProviderName = null;
 
-    // Backup
     private static File backupDir;
     private static final int MAX_BACKUPS = 10;
 
-    // Async & concurrency
     private static ScheduledExecutorService scheduler;
     private static ExecutorService asyncExecutor;
 
-    // bStats + monitoring
     private static Metrics metrics;
 
-    // Reactive events
     private static final PublishSubject<VaultEvent> eventSubject = PublishSubject.create();
 
-    // Rate limiting
     private static final RateLimiter rateLimiter = new RateLimiter(100, 1, TimeUnit.SECONDS); // 100 req/s
 
-    // HTTP REST server
     private static HttpServer httpServer;
 
-    // Circuit breaker
     private static final CircuitBreaker circuitBreaker = new CircuitBreaker(5, 10000);
 
-    // --- EVENTS ---
 
     public interface VaultEvent {}
     public static class VaultConnectedEvent implements VaultEvent {}
@@ -72,7 +63,6 @@ public final class EZVault {
         }
     }
 
-    // --- Wrapper with priority and load balancing ---
 
     private static class EconomyWrapper {
         final Economy economy;
@@ -119,7 +109,6 @@ public final class EZVault {
         }
     }
 
-    // --- Core methods ---
 
     private static void discoverProviders() {
         safeRun(() -> {
@@ -128,7 +117,6 @@ public final class EZVault {
                 Economy eco = rsp.getProvider();
                 String pluginName = rsp.getPlugin().getName().toLowerCase();
                 int priority = 1;
-                // ustaw priorytety
                 priority = EZVaultBuilderHolder.instance.providerPriorities.getOrDefault(pluginName, 1);
                 economyProviders.put(pluginName, new EconomyWrapper(eco, priority));
                 logger.info("Discovered economy provider: " + pluginName + " with priority " + priority);
@@ -147,7 +135,6 @@ public final class EZVault {
                 .findFirst().orElse(null);
     }
 
-    // --- Async CompletableFuture API with rollback and retry ---
 
     public static CompletableFuture<Boolean> depositAsync(Player player, double amount) {
         return runAsyncWithRetry(() -> {
@@ -207,7 +194,6 @@ public final class EZVault {
         });
     }
 
-    // --- Backup ---
 
     private static void startBackupTask(int intervalSeconds) {
         scheduler.scheduleAtFixedRate(() -> {
@@ -242,8 +228,6 @@ public final class EZVault {
             files[i].delete();
         }
     }
-
-    // --- HTTP REST server for external API control ---
 
     private static void startHttpServer(int port) throws IOException {
         httpServer = HttpServer.create(new InetSocketAddress(port), 0);
@@ -285,7 +269,6 @@ public final class EZVault {
         return map;
     }
 
-    // --- Balance helpers (sync) ---
 
     public static double balance(Player p) {
         EconomyWrapper ecoWrap = economyProviders.get(activeProviderName);
@@ -298,7 +281,6 @@ public final class EZVault {
         }
     }
 
-    // --- Initialization ---
 
     static {
         plugin = JavaPlugin.getProvidingPlugin(EZVault.class);
@@ -319,7 +301,6 @@ public final class EZVault {
         return EZVaultBuilderHolder.instance;
     }
 
-    // --- Utility ---
 
     private static void safeRun(Runnable r) {
         try {
@@ -329,13 +310,11 @@ public final class EZVault {
         }
     }
 
-    // --- Reactive events subscription ---
 
     public static Observable<VaultEvent> events() {
         return eventSubject.hide();
     }
 
-    // --- Shutdown ---
 
     public static void shutdown() {
         safeRun(() -> {
@@ -347,7 +326,6 @@ public final class EZVault {
         });
     }
 
-    // --- Circuit Breaker impl ---
 
     private static class CircuitBreaker {
         private final int failureThreshold;
@@ -385,7 +363,6 @@ public final class EZVault {
         }
     }
 
-    // --- Rate limiter ---
 
     private static class RateLimiter {
         private final int maxRequests;
