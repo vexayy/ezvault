@@ -2,8 +2,6 @@
 
 **EZVault** is a modern, lightweight, and reactive economy bridge for Minecraft plugins, supporting asynchronous operations, prioritization of multiple providers, and event-based balance tracking — all in a clean and developer-friendly design.
 
-![Logo](https://github.com/yourusername/EZVault/logo.png) <!-- Podmień na prawdziwy link lub usuń -->
-
 ## ✨ Features
 
 - ⚡ **Asynchronous Economy Operations**  
